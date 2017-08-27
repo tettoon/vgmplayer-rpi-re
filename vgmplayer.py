@@ -10,9 +10,15 @@ from rpi_re.rpi_re import RPiReController
 
 class VgmPlayer:
 
+    _modules = {}
+
     def __init__(self):
         RPiReController.init()
         RPiReController.reset()
+
+    @property
+    def modules(self):
+        return self._modules
 
     def play(self, f):
         vgm = None
@@ -37,9 +43,17 @@ class VgmPlayer:
 
     def __reset_handler(self):
         RPiReController.reset()
+        if self.modules[0] == 'YM2608':
+            RPiReController.address(0)
+            RPiReController.data(0x29)
+            RPiReController.write()
+
+            RPiReController.address(1)
+            RPiReController.data(0x80)
+            RPiReController.write()
 
     def __write_handler(self, name, address, data):
-        if name == 'AY8910':
+        if name == 'AY8910' and self.modules[0] == name:
             RPiReController.address(0)
             RPiReController.data(address)
             RPiReController.write()
@@ -48,7 +62,7 @@ class VgmPlayer:
             RPiReController.data(data)
             RPiReController.write()
 
-        elif name == 'YM2151':
+        elif name == 'YM2151' and self.modules[0] == name:
             RPiReController.address(0)
             RPiReController.data(address)
             RPiReController.write()
@@ -56,12 +70,39 @@ class VgmPlayer:
             RPiReController.address(1)
             RPiReController.data(data)
             RPiReController.write()
+
+        elif name == 'YM2608' and self.modules[0] == name:
+            if (address & 0x100) == 0:
+                RPiReController.address(0)
+                RPiReController.data(address & 0xff)
+                RPiReController.write()
+
+                RPiReController.address(1)
+                RPiReController.data(data)
+                RPiReController.write()
+
+            else:
+                RPiReController.address(2)
+                RPiReController.data(address & 0xff)
+                RPiReController.write()
+
+                RPiReController.address(3)
+                RPiReController.data(data)
+                RPiReController.write()
 
     def __mute_handler(self):
         RPiReController.reset()
 
 
-with open(sys.argv[1], 'rb') as f:
+parser = argparse.ArgumentParser(description='Playback VGM data.')
+parser.add_argument("-m", "--module", type=str, help='Present RE:birth module identifier.')
+parser.add_argument("file")
+args = parser.parse_args()
+
+
+with open(args.file, 'rb') as f:
     player = VgmPlayer()
+    player.modules[0] = args.module
     player.play(f)
+
 

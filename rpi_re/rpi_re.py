@@ -51,8 +51,8 @@ class RPiReController:
 
     @classmethod
     def address(cls, address):
-        for (i, pin) in zip(range(0, 4), PINS_A):
-            w.digitalWrite(pin, (address>>i) and 1)
+        for i in range(0, 4):
+            w.digitalWrite(PINS_A[i], (address>>i) & 1)
 
     @classmethod
     def data(cls, data):
