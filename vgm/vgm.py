@@ -1,3 +1,4 @@
+import array
 import time
 
 class Vgm:
@@ -169,6 +170,8 @@ class Vgm:
         return self._mute_handlers
 
     def play(self):
+        self.__fire_reset()
+
         self.origin = time.time()
         self.samples = 0
 
@@ -187,6 +190,8 @@ class Vgm:
                 if command >= 0x30 and command <=0x3f:
                     self.buffer.read(1)
                 elif command >= 0x40 and command <= 0x4e:
+                    self.buffer.read(2)
+                elif command >= 0x51 and command <= 0x5f:
                     self.buffer.read(2)
                 elif command >= 0xa1 and command <= 0xaf:
                     self.buffer.read(2)
@@ -207,17 +212,26 @@ class Vgm:
     @classmethod
     def read_int32(self, buffer):
         data = bytearray(buffer.read(4))
-        return data[0] | data[1] << 8 | data[2] << 16 | data[3] << 24
+        if len(data) == 4:
+           return data[0] | data[1] << 8 | data[2] << 16 | data[3] << 24
+        else:
+           raise VgmException("Unexpected EOF.")
 
     @classmethod
     def read_int16(self, buffer):
         data = bytearray(buffer.read(2))
-        return data[0] | data[1] << 8
+        if len(data) == 2:
+            return data[0] | data[1] << 8
+        else:
+           raise VgmException("Unexpected EOF.")
 
     @classmethod
     def read_int8(self, buffer):
         data = bytearray(buffer.read(1))
-        return data[0]
+        if len(data) == 1:
+           return data[0]
+        else:
+           raise VgmException("Unexpected EOF.")
 
     @classmethod
     def read_string(self, buffer):
@@ -256,10 +270,18 @@ class Vgm:
         buffer.read(2)
 
     def __process_56(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        #self.__fire_write('YM2608', address, data)
+        self.__fire_write('YM2608_p0', address, data)
+	self.__wait_samples(1)
 
     def __process_57(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        #self.__fire_write('YM2608', address | 0x100, data)
+        self.__fire_write('YM2608_p1', address, data)
+	self.__wait_samples(1)
 
     def __process_58(self, command, buffer):
         buffer.read(2)
@@ -296,10 +318,46 @@ class Vgm:
         self.__wait_samples(self.wait_samples_63)
 
     def __process_67(self, command, buffer):
+        start_time = time.time()
         buffer.read(1)  # skip 0x66
         type = self.read_int8(buffer)
         size = self.read_int32(buffer)
-        buffer.read(size)  # skip data
+        print "type={0:X}, size={1}".format(type, size)
+        if type == 0x81:
+            # YM2608 ADPCM
+            rom_size = self.read_int32(buffer)
+            rom_start = self.read_int32(buffer)
+            rom_stop = rom_start + size - 8
+            rom_data = buffer.read(size-8)
+            start_addr = rom_start >> 2
+            stop_addr = rom_stop >> 2
+            print "YM2608 ADPCM write (start={0:X}, stop={1:X})".format(rom_start, rom_stop)
+            # self.__fire_write("YM2608_p1", 0x10, 0x13)
+            # self.__fire_write("YM2608_p1", 0x10, 0x80)
+            # self.__fire_write("YM2608_p1", 0x00, 0x60)
+            self.__fire_write("YM2608_p1", 0x00, 0x00)
+            self.__fire_write("YM2608_p1", 0x00, 0x01)
+            self.__fire_write("YM2608_p1", 0x01, 0x00)
+            self.__fire_write("YM2608_p1", 0x02, start_addr & 0xff)
+            self.__fire_write("YM2608_p1", 0x03, (start_addr >> 8) & 0xff)
+            self.__fire_write("YM2608_p1", 0x04, stop_addr & 0xff)
+            self.__fire_write("YM2608_p1", 0x05, (stop_addr >> 8) & 0xff)
+            self.__fire_write("YM2608_p1", 0x0c, 0xff)
+            self.__fire_write("YM2608_p1", 0x0d, 0xff)
+            self.__fire_write("YM2608_p1", 0x10, 0x1f)
+            self.__fire_write("YM2608_p1", 0x00, 0x60)
+            for d in array.array('b', rom_data):
+                self.__fire_write("YM2608_p1", 0x08, d)
+                # self.__fire_write("YM2608_p1", 0x10, 0x1b)
+                # self.__fire_write("YM2608_p1", 0x10, 0x13)
+            self.__fire_write("YM2608_p1", 0x00, 0x00)
+            self.__fire_write("YM2608_p1", 0x10, 0x80)
+            print "Done."
+            stop_time = time.time()
+            self.origin += stop_time - start_time
+
+        else:
+            buffer.read(size)  # skip data
 
     def __process_7n(self, command, buffer):
         self.__wait_samples(command-0x70+1)
