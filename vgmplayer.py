@@ -71,28 +71,8 @@ class VgmPlayer:
             RPiReController.data(data)
             RPiReController.write()
 
-        elif name == 'YM2608_p0' and self.modules[0] == name[0:6]:
-            RPiReController.address(0)
-            RPiReController.data(address)
-            RPiReController.write()
-
-            RPiReController.address(1)
-            RPiReController.data(data)
-            RPiReController.write()
-
-        elif name == 'YM2608_p1' and self.modules[0] == name[0:6]:
-            RPiReController.address(2)
-            RPiReController.data(address)
-            RPiReController.write()
-
-            RPiReController.address(3)
-            RPiReController.data(data)
-            RPiReController.write()
-
-        elif False and name[0:6] == 'YM2608' and self.modules[0] == name[0:6]:
-            a1 = (address & 0x100) != 0
-            # a1 = True
-            if not a1:
+        elif name == 'YM2608' and self.modules[0] == name:
+            if (address & 0x100) == 0:
                 RPiReController.address(0)
                 RPiReController.data(address & 0xff)
                 RPiReController.write()

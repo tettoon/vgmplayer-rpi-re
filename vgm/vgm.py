@@ -272,15 +272,13 @@ class Vgm:
     def __process_56(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        #self.__fire_write('YM2608', address, data)
-        self.__fire_write('YM2608_p0', address, data)
+        self.__fire_write('YM2608', address, data)
 	self.__wait_samples(1)
 
     def __process_57(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        #self.__fire_write('YM2608', address | 0x100, data)
-        self.__fire_write('YM2608_p1', address, data)
+        self.__fire_write('YM2608', address | 0x100, data)
 	self.__wait_samples(1)
 
     def __process_58(self, command, buffer):
@@ -322,7 +320,7 @@ class Vgm:
         buffer.read(1)  # skip 0x66
         type = self.read_int8(buffer)
         size = self.read_int32(buffer)
-        print "type={0:X}, size={1}".format(type, size)
+        # print "type={0:X}, size={1}".format(type, size)
         if type == 0x81:
             # YM2608 ADPCM
             rom_size = self.read_int32(buffer)
@@ -331,28 +329,25 @@ class Vgm:
             rom_data = buffer.read(size-8)
             start_addr = rom_start >> 2
             stop_addr = rom_stop >> 2
-            print "YM2608 ADPCM write (start={0:X}, stop={1:X})".format(rom_start, rom_stop)
-            # self.__fire_write("YM2608_p1", 0x10, 0x13)
-            # self.__fire_write("YM2608_p1", 0x10, 0x80)
-            # self.__fire_write("YM2608_p1", 0x00, 0x60)
-            self.__fire_write("YM2608_p1", 0x00, 0x00)
-            self.__fire_write("YM2608_p1", 0x00, 0x01)
-            self.__fire_write("YM2608_p1", 0x01, 0x00)
-            self.__fire_write("YM2608_p1", 0x02, start_addr & 0xff)
-            self.__fire_write("YM2608_p1", 0x03, (start_addr >> 8) & 0xff)
-            self.__fire_write("YM2608_p1", 0x04, stop_addr & 0xff)
-            self.__fire_write("YM2608_p1", 0x05, (stop_addr >> 8) & 0xff)
-            self.__fire_write("YM2608_p1", 0x0c, 0xff)
-            self.__fire_write("YM2608_p1", 0x0d, 0xff)
-            self.__fire_write("YM2608_p1", 0x10, 0x1f)
-            self.__fire_write("YM2608_p1", 0x00, 0x60)
+            # print "YM2608 ADPCM write (start={0:X}, stop={1:X})".format(rom_start, rom_stop)
+            self.__fire_write("YM2608", 0x100, 0x00)
+            self.__fire_write("YM2608", 0x100, 0x01)
+            self.__fire_write("YM2608", 0x101, 0x00)
+            self.__fire_write("YM2608", 0x102, start_addr & 0xff)
+            self.__fire_write("YM2608", 0x103, (start_addr >> 8) & 0xff)
+            self.__fire_write("YM2608", 0x104, stop_addr & 0xff)
+            self.__fire_write("YM2608", 0x105, (stop_addr >> 8) & 0xff)
+            self.__fire_write("YM2608", 0x10c, 0xff)
+            self.__fire_write("YM2608", 0x10d, 0xff)
+            self.__fire_write("YM2608", 0x110, 0x1f)
+            self.__fire_write("YM2608", 0x100, 0x60)
             for d in array.array('b', rom_data):
-                self.__fire_write("YM2608_p1", 0x08, d)
-                # self.__fire_write("YM2608_p1", 0x10, 0x1b)
-                # self.__fire_write("YM2608_p1", 0x10, 0x13)
-            self.__fire_write("YM2608_p1", 0x00, 0x00)
-            self.__fire_write("YM2608_p1", 0x10, 0x80)
-            print "Done."
+                self.__fire_write("YM2608", 0x108, d)
+                # self.__fire_write("YM2608", 0x110, 0x1b)
+                # self.__fire_write("YM2608", 0x110, 0x13)
+            self.__fire_write("YM2608", 0x100, 0x00)
+            self.__fire_write("YM2608", 0x110, 0x80)
+            # print "Done."
             stop_time = time.time()
             self.origin += stop_time - start_time
 
