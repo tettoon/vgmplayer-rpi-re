@@ -1,6 +1,8 @@
 import array
 import time
 
+from gd3 import Gd3, Gd3Error
+
 class Vgm:
 
     MAGIC = bytearray('Vgm ')
@@ -81,7 +83,6 @@ class Vgm:
             self.ay_chip_type = self.read_int8(self.buffer)
             self.ay_flags = self.read_int8(self.buffer)
             self.ym2203_ay8910_flags = self.read_int8(self.buffer)
-            self.ym2608_ay8910_flags = self.read_int8(self.buffer)
 
         if self.version >= 0x160:
             self.buffer.seek(0x7c)
@@ -100,6 +101,13 @@ class Vgm:
         if self.version >= 0x170:
             self.buffer.seek(0xbc)
             self.extra_header_offset = self.read_int32(self.buffer)
+
+        # GD3 tag
+        if self.gd3_offset != 0:
+            self.buffer.seek(0x14+self.gd3_offset)
+            self.gd3 = Gd3(self.buffer)
+        else:
+            self.gd3 = None
 
         # VGM data
         self.buffer.seek(self.VGM_DATA_OFFSET_POS + self.vgm_data_offset)
