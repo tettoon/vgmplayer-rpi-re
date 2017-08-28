@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-import gzip
 import argparse
+import gzip
+import signal
 import sys
 
 from vgm.vgm import Vgm, VgmError
@@ -30,18 +31,19 @@ class VgmPlayer:
             try:
                 with gzip.GzipFile(fileobj=f, mode='rb') as z:
                     self.__play(z)
-                    self.vgm = Vgm(z)
             except VgmError as e:
                 raise e
 
     def __play(self, f):
-        vgm = Vgm(f)
-        vgm.reset_handlers.append(self.__reset_handler)
-        vgm.write_handlers.append(self.__write_handler)
-        vgm.mute_handlers.append(self.__mute_handler)
 
+        signal.signal(signal.SIGINT, self.__break_handler)
+ 
+        self.vgm = Vgm(f)
+        self.vgm.reset_handlers.append(self.__reset_handler)
+        self.vgm.write_handlers.append(self.__write_handler)
+        self.vgm.mute_handlers.append(self.__mute_handler)
 
-        gd3 = vgm.gd3
+        gd3 = self.vgm.gd3
         if self.show_gd3 and gd3 is not None:
             print "Track name (en): " + gd3.track_name_en
             print "Track name (ja): " + gd3.track_name_ja
@@ -55,56 +57,42 @@ class VgmPlayer:
             print "Name of person who converted it to a VGM file: " + gd3.converted_by
             print "Notes: " + gd3.notes
 
-        vgm.play()
+        self.vgm.play()
+
+    def __break_handler(self, signal, frame):
+        self.vgm.stop()
+
+    def __write_module(self, address, data):
+        RPiReController.address(address & 0xff)
+        RPiReController.data(data & 0xff)
+        RPiReController.write()
 
     def __reset_handler(self):
         RPiReController.reset()
         if self.modules[0] == 'YM2608':
-            RPiReController.address(0)
-            RPiReController.data(0x29)
-            RPiReController.write()
-
-            RPiReController.address(1)
-            RPiReController.data(0x80)
-            RPiReController.write()
+            self.__write_module(0, 0x29)
+            self.__write_module(1, 0x80)
 
     def __write_handler(self, name, address, data):
         if name == 'AY8910' and self.modules[0] == name:
-            RPiReController.address(0)
-            RPiReController.data(address)
-            RPiReController.write()
+            self.__write_module(0, address)
+            self.__write_module(1, data)
 
-            RPiReController.address(1)
-            RPiReController.data(data)
-            RPiReController.write()
+        elif name == 'YM2413' and self.modules[0] == name:
+            self.__write_module(0, address)
+            self.__write_module(1, data)
 
         elif name == 'YM2151' and self.modules[0] == name:
-            RPiReController.address(0)
-            RPiReController.data(address)
-            RPiReController.write()
-
-            RPiReController.address(1)
-            RPiReController.data(data)
-            RPiReController.write()
+            self.__write_module(0, address)
+            self.__write_module(1, data)
 
         elif name == 'YM2608' and self.modules[0] == name:
             if (address & 0x100) == 0:
-                RPiReController.address(0)
-                RPiReController.data(address & 0xff)
-                RPiReController.write()
-
-                RPiReController.address(1)
-                RPiReController.data(data)
-                RPiReController.write()
-
+                self.__write_module(0, address)
+                self.__write_module(1, data)
             else:
-                RPiReController.address(2)
-                RPiReController.data(address & 0xff)
-                RPiReController.write()
-
-                RPiReController.address(3)
-                RPiReController.data(data)
-                RPiReController.write()
+                self.__write_module(2, address)
+                self.__write_module(3, data)
 
     def __mute_handler(self):
         RPiReController.reset()
