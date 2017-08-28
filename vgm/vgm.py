@@ -1,6 +1,8 @@
 import array
 import time
 
+from gd3 import Gd3, Gd3Error
+
 class Vgm:
 
     MAGIC = bytearray('Vgm ')
@@ -101,14 +103,21 @@ class Vgm:
             self.buffer.seek(0xbc)
             self.extra_header_offset = self.read_int32(self.buffer)
 
+        # GD3 tag
+        if self.gd3_offset != 0:
+            self.buffer.seek(0x14+self.gd3_offset)
+            self.gd3 = Gd3(self.buffer)
+        else:
+            self.gd3 = None
+
         # VGM data
         self.buffer.seek(self.VGM_DATA_OFFSET_POS + self.vgm_data_offset)
 
     def __prepare_processor(self):
         processors = {}
 
-        processors[0x4f] = self.__process_4f
-        processors[0x50] = self.__process_50
+        # processors[0x4f] = self.__process_4f
+        # processors[0x50] = self.__process_50
         processors[0x51] = self.__process_51
         processors[0x52] = self.__process_52
         processors[0x53] = self.__process_53
@@ -116,35 +125,24 @@ class Vgm:
         processors[0x55] = self.__process_55
         processors[0x56] = self.__process_56
         processors[0x57] = self.__process_57
-        processors[0x58] = self.__process_58
-        processors[0x59] = self.__process_59
+        # processors[0x58] = self.__process_58
+        # processors[0x59] = self.__process_59
         processors[0x5a] = self.__process_5a
         processors[0x5b] = self.__process_5b
         processors[0x5c] = self.__process_5c
-        processors[0x5d] = self.__process_5d
-        processors[0x5e] = self.__process_5e
-        processors[0x5f] = self.__process_5f
+        # processors[0x5d] = self.__process_5d
+        # processors[0x5e] = self.__process_5e
+        # processors[0x5f] = self.__process_5f
 
         processors[0x61] = self.__process_61
         processors[0x62] = self.__process_62
         processors[0x63] = self.__process_63
+        processors[0x64] = self.__process_64
+        processors[0x66] = self.__process_66
         processors[0x67] = self.__process_67
-        processors[0x70] = self.__process_7n
-        processors[0x71] = self.__process_7n
-        processors[0x72] = self.__process_7n
-        processors[0x73] = self.__process_7n
-        processors[0x74] = self.__process_7n
-        processors[0x75] = self.__process_7n
-        processors[0x76] = self.__process_7n
-        processors[0x77] = self.__process_7n
-        processors[0x78] = self.__process_7n
-        processors[0x79] = self.__process_7n
-        processors[0x7a] = self.__process_7n
-        processors[0x7b] = self.__process_7n
-        processors[0x7c] = self.__process_7n
-        processors[0x7d] = self.__process_7n
-        processors[0x7e] = self.__process_7n
-        processors[0x7f] = self.__process_7n
+
+        for i in range(0x70, 0x80):
+            processors[i] = self.__process_7n
 
         processors[0x90] = self.__process_90
         processors[0x91] = self.__process_91
@@ -175,12 +173,10 @@ class Vgm:
         self.origin = time.time()
         self.samples = 0
 
-        while True:
+        self._playing = True
+        while self._playing:
             command = self.read_int8(self.buffer)
             # print "Command {0:X} found.".format(command)
-
-            if command == 0x66:
-                break
 
             processor = None
             if command in self.processors:
@@ -204,10 +200,10 @@ class Vgm:
                 else:
                     raise VgmError("Unsupported command: {0:X}".format(command))
 
-        self.stop()
+        self.__fire_mute()
 
     def stop(self):
-        self.__fire_mute()
+        self._playing = False
 
     @classmethod
     def read_int32(self, buffer):
@@ -249,16 +245,26 @@ class Vgm:
         print "Game Gear PSG stereo, write {0:X} to port 0x06".format(dd)
 
     def __process_50(self, command, buffer):
-        buffer.read(1)
+        dd = self.read_int8(buffer)
+        print "PSG (SN76489/SN76496) write value {0:X}".format(dd)
 
     def __process_51(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YM2413', address, data)
+	self.__wait_samples(1)
 
     def __process_52(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YM2612', address, data)
+	self.__wait_samples(1)
 
     def __process_53(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YM2612', address | 0x100, data)
+	self.__wait_samples(1)
 
     def __process_54(self, command, buffer):
         address = self.read_int8(buffer)
@@ -267,7 +273,10 @@ class Vgm:
 	self.__wait_samples(1)
 
     def __process_55(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YM2203', address, data)
+	self.__wait_samples(1)
 
     def __process_56(self, command, buffer):
         address = self.read_int8(buffer)
@@ -281,29 +290,35 @@ class Vgm:
         self.__fire_write('YM2608', address | 0x100, data)
 	self.__wait_samples(1)
 
-    def __process_58(self, command, buffer):
-        buffer.read(2)
-
-    def __process_59(self, command, buffer):
-        buffer.read(2)
-
     def __process_5a(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YM3812', address, data)
+	self.__wait_samples(1)
 
     def __process_5b(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YM3526', address, data)
+	self.__wait_samples(1)
 
     def __process_5c(self, command, buffer):
-        buffer.read(2)
-
-    def __process_5d(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('Y8950', address, data)
+	self.__wait_samples(1)
 
     def __process_5e(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YMF262', address, data)
+	self.__wait_samples(1)
 
     def __process_5f(self, command, buffer):
-        buffer.read(2)
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('YMF262', address | 0x100, data)
+	self.__wait_samples(1)
 
     def __process_61(self, command, buffer):
         samples = self.read_int16(buffer)
@@ -314,6 +329,19 @@ class Vgm:
 
     def __process_63(self, command, buffer):
         self.__wait_samples(self.wait_samples_63)
+
+    def __process_64(self, command, buffer):
+        cc = self.read_int8(buffer)
+        samples = self.read_int16(buffer)
+        if cc == 0x62:
+            self.wait_samples_62 = samples
+        elif cc == 0x63:
+            self.wait_samples_63 = samples
+        else:
+            raise VgmError("Invalid command value on command 0x64: {0:X}".format(cc))
+
+    def __process_66(self, command, buffer):
+        self._playing = False
 
     def __process_67(self, command, buffer):
         start_time = time.time()
@@ -399,6 +427,11 @@ class Vgm:
         self.__fire_write('AY8910', address, data)
 	self.__wait_samples(1)
 
+    def __process_b7(self, command, buffer):
+        address = self.read_int8(buffer)
+        data = self.read_int8(buffer)
+        self.__fire_write('OKI6258', address, data)
+	self.__wait_samples(1)
 
     def __fire_reset(self):
         for h in self._reset_handlers:
