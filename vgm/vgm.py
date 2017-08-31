@@ -1,4 +1,5 @@
 import array
+import sys
 import time
 
 from gd3 import Gd3, Gd3Error
@@ -9,9 +10,11 @@ class Vgm:
 
     VGM_DATA_OFFSET_POS = 0x34
 
-    _reset_handlers = []
-    _write_handlers = []
-    _mute_handlers = []
+    reset_handlers = []
+    write_handlers = []
+    mute_handlers = []
+
+    is_playing = False
 
     def __init__(self, buffer):
         self.buffer = buffer
@@ -21,9 +24,6 @@ class Vgm:
     def __load_header(self):
 
         self.buffer.seek(0)
-
-        self.wait_samples_62 = 735
-        self.wait_samples_63 = 882
 
         # ident
         ident = bytearray(self.buffer.read(4))
@@ -155,26 +155,17 @@ class Vgm:
 
         self.processors = processors
 
-    @property
-    def reset_handlers(self):
-        return self._reset_handlers
-
-    @property
-    def write_handlers(self):
-        return self._write_handlers
-
-    @property
-    def mute_handlers(self):
-        return self._mute_handlers
-
     def play(self):
+        self.is_playing = True
+        self.__wait_samples_62 = 735
+        self.__wait_samples_63 = 882
+        self.__samples = 0
+
         self.__fire_reset()
 
-        self.origin = time.time()
-        self.samples = 0
+        self.__origin_time = time.time()
 
-        self._playing = True
-        while self._playing:
+        while self.is_playing:
             command = self.read_int8(self.buffer)
             # print "Command {0:X} found.".format(command)
 
@@ -203,7 +194,7 @@ class Vgm:
         self.__fire_mute()
 
     def stop(self):
-        self._playing = False
+        self.is_playing = False
 
     @classmethod
     def read_int32(self, buffer):
@@ -234,19 +225,19 @@ class Vgm:
         pass
 
     def __wait_samples(self, samples):
-        # print "Wait {0} sample(s).".format(samples)
-        # time.sleep(samples / 44100.0)
-        self.samples += samples
-        while self.samples > (time.time() - self.origin) * 44100:
+        self.__samples += samples
+        while self.__samples > (time.time()-self.__origin_time)*44100:
             pass
 
     def __process_4f(self, command, buffer):
         dd = self.read_int8(buffer)
-        print "Game Gear PSG stereo, write {0:X} to port 0x06".format(dd)
+        # print "Game Gear PSG stereo, write {0:X} to port 0x06".format(dd)
+	self.__wait_samples(1)
 
     def __process_50(self, command, buffer):
         dd = self.read_int8(buffer)
-        print "PSG (SN76489/SN76496) write value {0:X}".format(dd)
+        self.__fire_write('SN76489', 0, data)
+	self.__wait_samples(1)
 
     def __process_51(self, command, buffer):
         address = self.read_int8(buffer)
@@ -325,23 +316,23 @@ class Vgm:
         self.__wait_samples(samples)
 
     def __process_62(self, command, buffer):
-        self.__wait_samples(self.wait_samples_62)
+        self.__wait_samples(self.__wait_samples_62)
 
     def __process_63(self, command, buffer):
-        self.__wait_samples(self.wait_samples_63)
+        self.__wait_samples(self.__wait_samples_63)
 
     def __process_64(self, command, buffer):
         cc = self.read_int8(buffer)
         samples = self.read_int16(buffer)
         if cc == 0x62:
-            self.wait_samples_62 = samples
+            self.__wait_samples_62 = samples
         elif cc == 0x63:
-            self.wait_samples_63 = samples
+            self.__wait_samples_63 = samples
         else:
             raise VgmError("Invalid command value on command 0x64: {0:X}".format(cc))
 
     def __process_66(self, command, buffer):
-        self._playing = False
+        self.stop()
 
     def __process_67(self, command, buffer):
         start_time = time.time()
@@ -349,38 +340,43 @@ class Vgm:
         type = self.read_int8(buffer)
         size = self.read_int32(buffer)
         # print "type={0:X}, size={1}".format(type, size)
-        if type == 0x81:
-            # YM2608 ADPCM
+        if type >= 0x80 and type <= 0xbf:
             rom_size = self.read_int32(buffer)
             rom_start = self.read_int32(buffer)
-            rom_stop = rom_start + size - 8
+            rom_stop = rom_start + size - 8 - 1
             rom_data = buffer.read(size-8)
-            start_addr = rom_start >> 2
-            stop_addr = rom_stop >> 2
-            # print "YM2608 ADPCM write (start={0:X}, stop={1:X})".format(rom_start, rom_stop)
-            self.__fire_write("YM2608", 0x100, 0x00)
-            self.__fire_write("YM2608", 0x100, 0x01)
-            self.__fire_write("YM2608", 0x101, 0x00)
-            self.__fire_write("YM2608", 0x102, start_addr & 0xff)
-            self.__fire_write("YM2608", 0x103, (start_addr >> 8) & 0xff)
-            self.__fire_write("YM2608", 0x104, stop_addr & 0xff)
-            self.__fire_write("YM2608", 0x105, (stop_addr >> 8) & 0xff)
-            self.__fire_write("YM2608", 0x10c, 0xff)
-            self.__fire_write("YM2608", 0x10d, 0xff)
-            self.__fire_write("YM2608", 0x110, 0x1f)
-            self.__fire_write("YM2608", 0x100, 0x60)
-            for d in array.array('b', rom_data):
-                self.__fire_write("YM2608", 0x108, d)
-                # self.__fire_write("YM2608", 0x110, 0x1b)
-                # self.__fire_write("YM2608", 0x110, 0x13)
-            self.__fire_write("YM2608", 0x100, 0x00)
-            self.__fire_write("YM2608", 0x110, 0x80)
-            # print "Done."
-            stop_time = time.time()
-            self.origin += stop_time - start_time
 
+            if type == 0x81:
+                # YM2608 ADPCM
+                start_addr = rom_start >> 2
+                stop_addr = rom_stop >> 2
+                sys.stdout.write("Writing YM2608 RAM (start=0x{0:X}, stop=0x{1:X})...".format(rom_start, rom_stop))
+                sys.stdout.flush()
+                self.__fire_write("YM2608", 0x100, 0x00)
+                self.__fire_write("YM2608", 0x100, 0x01)
+                self.__fire_write("YM2608", 0x101, 0x00)
+                self.__fire_write("YM2608", 0x102, start_addr & 0xff)
+                self.__fire_write("YM2608", 0x103, (start_addr >> 8) & 0xff)
+                self.__fire_write("YM2608", 0x104, stop_addr & 0xff)
+                self.__fire_write("YM2608", 0x105, (stop_addr >> 8) & 0xff)
+                self.__fire_write("YM2608", 0x10c, 0xff)
+                self.__fire_write("YM2608", 0x10d, 0xff)
+                self.__fire_write("YM2608", 0x110, 0x1f)
+                self.__fire_write("YM2608", 0x100, 0x60)
+                for d in array.array('b', rom_data):
+                    self.__fire_write("YM2608", 0x108, d)
+                self.__fire_write("YM2608", 0x100, 0x00)
+                self.__fire_write("YM2608", 0x110, 0x80)
+                sys.stdout.write("Done.\n")
+                sys.stdout.flush()
+
+            else:
+                print "Unsupported chip type: {0:X}".format(type)
         else:
             buffer.read(size)  # skip data
+
+        stop_time = time.time()
+        self.__origin_time += stop_time - start_time
 
     def __process_7n(self, command, buffer):
         self.__wait_samples(command-0x70+1)
@@ -434,15 +430,15 @@ class Vgm:
 	self.__wait_samples(1)
 
     def __fire_reset(self):
-        for h in self._reset_handlers:
+        for h in self.reset_handlers:
             h()
 
     def __fire_write(self, name, address, data):
-        for h in self._write_handlers:
+        for h in self.write_handlers:
             h(name, address, data)
 
     def __fire_mute(self):
-        for h in self._mute_handlers:
+        for h in self.mute_handlers:
             h()
 
 
