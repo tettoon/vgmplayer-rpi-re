@@ -4,44 +4,41 @@ import argparse
 import gzip
 import signal
 import sys
+import time
 
+from module_controller import ModuleController
 from vgm.vgm import Vgm, VgmError
-from rpi_re.rpi_re import RPiReController
 
 
 class VgmPlayer:
 
-    _modules = {}
-
     show_gd3 = False
 
     def __init__(self):
-        RPiReController.init()
-        RPiReController.reset()
+        self.mc = ModuleController()
 
     @property
     def modules(self):
-        return self._modules
+        return self.mc.modules
 
     def play(self, f):
+        self.f = f
+
         try:
-            self.__play(f)
+            self.__play(self.f)
         except VgmError:
             f.seek(0)
             try:
-                with gzip.GzipFile(fileobj=f, mode='rb') as z:
+                with gzip.GzipFile(fileobj=self.f, mode='rb') as z:
                     self.__play(z)
             except VgmError as e:
                 raise e
 
     def __play(self, f):
-
-        signal.signal(signal.SIGINT, self.__break_handler)
- 
         self.vgm = Vgm(f)
-        self.vgm.reset_handlers.append(self.__reset_handler)
-        self.vgm.write_handlers.append(self.__write_handler)
-        self.vgm.mute_handlers.append(self.__mute_handler)
+        self.vgm.reset_handlers.append(self.mc.reset)
+        self.vgm.write_handlers.append(self.mc.write)
+        self.vgm.mute_handlers.append(self.mc.mute)
 
         gd3 = self.vgm.gd3
         if self.show_gd3 and gd3 is not None:
@@ -59,43 +56,14 @@ class VgmPlayer:
 
         self.vgm.play()
 
-    def __break_handler(self, signal, frame):
-        self.vgm.stop()
+    def stop(self):
+        if self.vgm is not None:
+            self.vgm.stop()
 
-    def __write_module(self, address, data):
-        RPiReController.address(address & 0xff)
-        RPiReController.data(data & 0xff)
-        RPiReController.write()
 
-    def __reset_handler(self):
-        RPiReController.reset()
-        if self.modules[0] == 'YM2608':
-            self.__write_module(0, 0x29)
-            self.__write_module(1, 0x80)
-
-    def __write_handler(self, name, address, data):
-        if name == 'AY8910' and self.modules[0] == name:
-            self.__write_module(0, address)
-            self.__write_module(1, data)
-
-        elif name == 'YM2413' and self.modules[0] == name:
-            self.__write_module(0, address)
-            self.__write_module(1, data)
-
-        elif name == 'YM2151' and self.modules[0] == name:
-            self.__write_module(0, address)
-            self.__write_module(1, data)
-
-        elif name == 'YM2608' and self.modules[0] == name:
-            if (address & 0x100) == 0:
-                self.__write_module(0, address)
-                self.__write_module(1, data)
-            else:
-                self.__write_module(2, address)
-                self.__write_module(3, data)
-
-    def __mute_handler(self):
-        RPiReController.reset()
+def break_handler(signal, frame):
+    print "Interrupted."
+    player.stop()
 
 
 parser = argparse.ArgumentParser(description='Playback VGM data.')
@@ -108,6 +76,8 @@ player = VgmPlayer()
 player.modules[0] = args.module
 if args.gd3:
     player.show_gd3 = True
+
+signal.signal(signal.SIGINT, break_handler)
 
 with open(args.file, 'rb') as f:
     player.play(f)
