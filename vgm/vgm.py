@@ -1,23 +1,24 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
 import array
 import sys
 import time
 
-from gd3 import Gd3, Gd3Error
+from vgm.gd3 import Gd3, Gd3Error
 
 class Vgm:
 
-    MAGIC = bytearray('Vgm ')
+    MAGIC = bytearray('Vgm ', 'latin-1')
 
     VGM_DATA_OFFSET_POS = 0x34
 
-    reset_handlers = []
-    write_handlers = []
-    mute_handlers = []
-
-    is_playing = False
-
     def __init__(self, buffer):
         self.buffer = buffer
+        self.playing = False
+        self.stopped = True
+        self.reset_handlers = []
+        self.write_handlers = []
+        self.mute_handlers = []
+
         self.__load_header()
         self.__prepare_processor()
 
@@ -156,16 +157,17 @@ class Vgm:
         self.processors = processors
 
     def play(self):
-        self.is_playing = True
         self.__wait_samples_62 = 735
         self.__wait_samples_63 = 882
         self.__samples = 0
 
         self.__fire_reset()
 
-        self.__origin_time = time.time()
+        self.__origin_time = time.time() + 0.5
 
-        while self.is_playing:
+        self.playing = True
+        self.stopped = False
+        while self.playing:
             command = self.read_int8(self.buffer)
             # print "Command {0:X} found.".format(command)
 
@@ -191,10 +193,16 @@ class Vgm:
                 else:
                     raise VgmError("Unsupported command: {0:X}".format(command))
 
+            while self.__samples > (time.time()-self.__origin_time)*44100:
+                pass
+
+
         self.__fire_mute()
+        self.playing = False
+        self.stopped = True
 
     def stop(self):
-        self.is_playing = False
+        self.playing = False
 
     @classmethod
     def read_int32(self, buffer):
@@ -226,90 +234,88 @@ class Vgm:
 
     def __wait_samples(self, samples):
         self.__samples += samples
-        while self.__samples > (time.time()-self.__origin_time)*44100:
-            pass
 
     def __process_4f(self, command, buffer):
         dd = self.read_int8(buffer)
-        # print "Game Gear PSG stereo, write {0:X} to port 0x06".format(dd)
-	self.__wait_samples(1)
+        # print("Game Gear PSG stereo, write {0:X} to port 0x06".format(dd))
+        self.__wait_samples(1)
 
     def __process_50(self, command, buffer):
         dd = self.read_int8(buffer)
         self.__fire_write('SN76489', 0, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_51(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2413', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_52(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2612', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_53(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2612', address | 0x100, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_54(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2151', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_55(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2203', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_56(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2608', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_57(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM2608', address | 0x100, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_5a(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM3812', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_5b(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YM3526', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_5c(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('Y8950', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_5e(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YMF262', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_5f(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('YMF262', address | 0x100, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_61(self, command, buffer):
         samples = self.read_int16(buffer)
@@ -350,8 +356,8 @@ class Vgm:
                 # YM2608 ADPCM
                 start_addr = rom_start >> 2
                 stop_addr = rom_stop >> 2
-                sys.stdout.write("Writing YM2608 RAM (start=0x{0:X}, stop=0x{1:X})...".format(rom_start, rom_stop))
-                sys.stdout.flush()
+                # sys.stdout.write("Writing YM2608 RAM (start=0x{0:X}, stop=0x{1:X})...".format(rom_start, rom_stop))
+                # sys.stdout.flush()
                 self.__fire_write("YM2608", 0x100, 0x00)
                 self.__fire_write("YM2608", 0x100, 0x01)
                 self.__fire_write("YM2608", 0x101, 0x00)
@@ -367,11 +373,11 @@ class Vgm:
                     self.__fire_write("YM2608", 0x108, d)
                 self.__fire_write("YM2608", 0x100, 0x00)
                 self.__fire_write("YM2608", 0x110, 0x80)
-                sys.stdout.write("Done.\n")
-                sys.stdout.flush()
+                # sys.stdout.write("Done.\n")
+                # sys.stdout.flush()
 
             else:
-                print "Unsupported chip type: {0:X}".format(type)
+                print("Unsupported chip type: {0:X}".format(type))
         else:
             buffer.read(size)  # skip data
 
@@ -421,13 +427,13 @@ class Vgm:
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('AY8910', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __process_b7(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
         self.__fire_write('OKI6258', address, data)
-	self.__wait_samples(1)
+        self.__wait_samples(1)
 
     def __fire_reset(self):
         for h in self.reset_handlers:

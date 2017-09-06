@@ -1,3 +1,4 @@
+from __future__ import division, print_function, unicode_literals
 import time
 
 from rpi_re.rpi_re import RPiReController
@@ -56,7 +57,7 @@ class ModuleController:
         self.__write_module(1, data)
 
     def __write_oki6258(self, slot, address, data):
-        print "OKI6258: {0:X}, {1:X}".format(address, data)
+        print("OKI6258: {0:X}, {1:X}".format(address, data))
 
     def __write_sn76489(self, slot, data):
         self.__write_module(0, data)
