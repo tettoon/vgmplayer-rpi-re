@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
+
 class Gd3:
 
-    MAGIC = bytearray('Gd3 ')
+    MAGIC = bytearray('Gd3 ', 'latin-1')
 
     def __init__(self, buffer):
         ident = bytearray(buffer.read(4))
