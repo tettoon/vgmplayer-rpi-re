@@ -31,7 +31,7 @@
 
 1. Set local python version.
    ```
-   pyenv 2.7.13
+   pyenv local 2.7.13
    ```
 
 1. Install Wiringpi-Python.
