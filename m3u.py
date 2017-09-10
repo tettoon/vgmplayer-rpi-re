@@ -20,7 +20,7 @@ class M3U:
             for line in f:
                 line = line.strip("\r\n")
                 if line_no == 0 and line == '#EXTM3U':
-                    this.extm3u = True
+                    self.extm3u = True
                 elif blank_pattern.match(line):
                     pass
                 elif comment_pattern.match(line):
