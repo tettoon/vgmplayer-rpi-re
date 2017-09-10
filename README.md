@@ -6,30 +6,36 @@
 
 1. Install prerequisites.
    ```
-   sudo apt-get install git python-dev libbz2-dev libreadline-dev libsqllite3-dev libssl-dev
+   $ sudo apt-get install git python-dev libbz2-dev libreadline-dev libsqllite3-dev libssl-dev
+   ```
+
+1. Install pip.
+   ```
+   $ curl -O https://bootstrap.pypa.io/get-pip.py
+   $ sudo python get-pip.py
    ```
 
 1. Install Wiringpi-Python.
    ```
-   sudo pip install wiringpi
+   $ sudo pip install wiringpi
    ```
 
 1. Clone `vgmplayer-rpi-re` repository.
    ```
-   git clone https://github.com/tettoon/vgmplayer-rpi-re.git
-   cd vgmplayer-rpi-re
+   $ git clone https://github.com/tettoon/vgmplayer-rpi-re.git
+   $ cd vgmplayer-rpi-re
    ```
 
 ### pyenv
 
 1. Install prerequisites.
    ```
-   sudo apt-get install git libbz2-dev libreadline-dev libsqllite3-dev libssl-dev
+   $ sudo apt-get install git libbz2-dev libreadline-dev libsqllite3-dev libssl-dev
    ```
 
 1. Install pyenv.
    ```
-   curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
+   $ curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
    ```
    Append below lines to `~/.bashrc`.
    ```
@@ -40,41 +46,41 @@
 
 1. Install Python 2.7.13.
    ```
-   pyenv install 2.7.13
+   $ pyenv install 2.7.13
    ```
    Wait a few minutes.
 
 1. Clone `vgmplayer-rpi-re` repository.
    ```
-   git clone https://github.com/tettoon/vgmplayer-rpi-re.git
-   cd vgmplayer-rpi-re
+   $ git clone https://github.com/tettoon/vgmplayer-rpi-re.git
+   $ cd vgmplayer-rpi-re
    ```
 
 1. Set local python version.
    ```
-   pyenv local 2.7.13
+   $ pyenv local 2.7.13
    ```
 
 1. Rehash pyenv.
    ```
-   pyenv rehash
+   $ pyenv rehash
    ```
 
 1. Install Wiringpi-Python.
    ```
-   pip install wiringpi
+   $ pip install wiringpi
    ```
 
 ## Usage
 * Show help message.
   ```
-  python vgmplayer.py --help
+  $ python vgmplayer.py --help
   ```
 * Play VGM file.
   ```
-  python vgmplayer.py -m YM2151 -g ~/vgm/mysong.vgz
+  $ python vgmplayer.py -m YM2151 ~/vgm/mysong.vgz
   ```
 * Play as M3U playlist.
   ```
-  python vgmplayer.py -m YM2151 -g -l ~/vgm/mylist.m3u
+  $ python vgmplayer.py -m YM2151 -l ~/vgm/mylist.m3u
   ```
