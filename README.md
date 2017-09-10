@@ -67,7 +67,7 @@
 
 ## Usage
 * Show help message.
-```
+  ```
   python vgmplayer.py --help
   ```
 * Play VGM file.
