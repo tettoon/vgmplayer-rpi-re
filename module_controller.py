@@ -30,6 +30,8 @@ class ModuleController:
                 self.__write_76489(i, data)
             elif name == 'YM2151' and m == name:
                 self.__write_ym2151(i, address, data)
+            elif name == 'YM2203' and m == name:
+                self.__write_ym2203(i, address, data)
             elif name == 'YM2413' and m == name:
                 self.__write_ym2413(i, address, data)
             elif name == 'YM2608' and m == name:
@@ -63,6 +65,10 @@ class ModuleController:
         self.__write_module(0, data)
 
     def __write_ym2151(self, slot, address, data):
+        self.__write_module(0, address)
+        self.__write_module(1, data)
+
+    def __write_ym2203(self, slot, address, data):
         self.__write_module(0, address)
         self.__write_module(1, data)
 
