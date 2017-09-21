@@ -2,6 +2,8 @@
 
 ## Installation
 
+Choose one.
+
 ### Python bundled with Raspbian (Stretch 2017-09-07)
 
 1. Install prerequisites.
@@ -78,9 +80,9 @@
   ```
 * Play VGM file.
   ```
-  $ python vgmplayer.py -m YM2151 ~/vgm/mysong.vgz
+  $ python vgmplayer.py -g -m YM2151 ~/vgm/mysong.vgz
   ```
 * Play as M3U playlist.
   ```
-  $ python vgmplayer.py -m YM2151 -l ~/vgm/mylist.m3u
+  $ python vgmplayer.py -g -m YM2151 -l ~/vgm/mylist.m3u
   ```
