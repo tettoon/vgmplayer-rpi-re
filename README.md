@@ -47,7 +47,7 @@ Choose one.
    ```
 1. Load ~/.bash\_profile.
    ```
-   source ~/.bash_profile
+   $ source ~/.bash_profile
    ```
 1. Install Python 2.7.13.
    ```
