@@ -39,13 +39,16 @@ Choose one.
    ```
    $ curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
    ```
-   Append below lines to `~/.bashrc`.
+   Append below lines to `~/.bash_profile`.
    ```
    export PATH="~/.pyenv/bin:$PATH"
    eval "$(pyenv init -)"
    eval "$(pyenv virtualenv-init -)"
    ```
-
+1. Load ~/.bash\_profile.
+   ```
+   source ~/.bash_profile
+   ```
 1. Install Python 2.7.13.
    ```
    $ pyenv install 2.7.13
