@@ -20,7 +20,8 @@ class ModuleController:
          
         for i, m in self.modules.items():
             # Module Initialization
-            pass
+            if m == 'YM2608':
+                self.__write_ym2608_p0(i, 0x29, 0x80)
 
     def write(self, name, address, data):
         for i, m in self.modules.items():
