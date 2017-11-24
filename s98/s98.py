@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 import array
 import sys
@@ -87,23 +88,25 @@ class S98:
             bom_test = self.buffer.read(3)
             if bom_test == self.BOM:
                 # UTF-8
+                # print("utf-8")
                 tag_data = bytearray()
                 while True:
                     b = self.buffer.read(1)
-                    if b is None or b == '\0':
+                    if b is None or b == str('\0'):
                         break
                     tag_data.append(b)
                 self.tag = tag_data
             else:
                 # Shift JIS
+                # print("Shift JIS")
                 self.buffer.seek(self.file_offset_tag)
                 tag_data = bytearray()
                 while True:
                     b = self.buffer.read(1)
-                    if b is None or b == '\0':
+                    if b is None or b == str('\0'):
                         break
                     tag_data.append(b)
-                self.tag = tag_data
+                self.tag = tag_data.decode('sjis')
         else:
             self.tag = None
 
