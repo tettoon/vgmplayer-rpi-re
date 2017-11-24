@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 import array
 import sys
@@ -18,7 +19,8 @@ DEVICE_DCSG = 16
 
 class S98:
 
-    MAGIC = bytearray('S98', 'latin-1')
+    MAGIC = 'S98'.encode('latin-1')
+    BOM = [0xef, 0xbb, 0xbf]
 
     def __init__(self, buffer):
         self.buffer = buffer
@@ -37,10 +39,12 @@ class S98:
         self.buffer.seek(0)
 
         # ident
-        ident = bytearray(self.buffer.read(len(self.MAGIC)))
+        ident = bytes(self.buffer.read(len(self.MAGIC)))
+        if self.MAGIC != ident:
+            raise S98Error('Invalid file identification.')
         for (a, b) in zip(self.MAGIC, ident):
             if a != b:
-                raise S98Error('Invalid file identification.')
+                raise S98Error('Invalid file identification. (2)')
 
         # header
         self.version = self.read_int8(self.buffer)
@@ -80,8 +84,26 @@ class S98:
         # tag
         if self.file_offset_tag != 0:
             self.buffer.seek(self.file_offset_tag)
-            print("0x{0:X}".format(self.buffer.tell()))
-            self.tag = self.buffer.readlines()
+            bom_test = self.buffer.read(3)
+            if bom_test == self.BOM:
+                # UTF-8
+                tag_data = bytearray()
+                while True:
+                    b = self.buffer.read(1)
+                    if b is None or b == '\0':
+                        break
+                    tag_data.append(b)
+                self.tag = tag_data
+            else:
+                # Shift JIS
+                self.buffer.seek(self.file_offset_tag)
+                tag_data = bytearray()
+                while True:
+                    b = self.buffer.read(1)
+                    if b is None or b == '\0':
+                        break
+                    tag_data.append(b)
+                self.tag = tag_data
         else:
             self.tag = None
 

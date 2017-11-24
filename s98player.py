@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from __future__ import division, print_function, unicode_literals
 import argparse
@@ -54,6 +54,7 @@ class S98Player:
         # tag = self.s98.tag
         if self.show_tag == True and self.s98.tag is not None:
             print(self.s98.tag)
+            pass
 
         self.s98.play()
 
