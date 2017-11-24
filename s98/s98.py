@@ -43,9 +43,6 @@ class S98:
         ident = bytes(self.buffer.read(len(self.MAGIC)))
         if self.MAGIC != ident:
             raise S98Error('Invalid file identification.')
-        for (a, b) in zip(self.MAGIC, ident):
-            if a != b:
-                raise S98Error('Invalid file identification. (2)')
 
         # header
         self.version = self.read_int8(self.buffer)
