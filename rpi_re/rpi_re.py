@@ -75,10 +75,8 @@ class RPiReController:
 
     @classmethod
     def write(cls):
-        cls.__set_data_bus_mode(w.OUTPUT)
         cls.cs0(0)
         cls.wr(0)
-        time.sleep(0.0000001)
         cls.wr(1)
         cls.cs0(1)
 
