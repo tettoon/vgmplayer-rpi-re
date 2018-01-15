@@ -63,7 +63,7 @@ class Vgm:
             self.buffer.seek(self.VGM_DATA_OFFSET_POS)
             self.vgm_data_offset = self.read_int32(self.buffer)
         else:
-            self.vgm_data_offset = self.read_int32(0x0000000c)
+            self.vgm_data_offset = 0x0000000c
 
         if self.version >= 0x151:
             # self.buffer.seek(0x38)
@@ -118,7 +118,7 @@ class Vgm:
         processors = {}
 
         # processors[0x4f] = self.__process_4f
-        # processors[0x50] = self.__process_50
+        processors[0x50] = self.__process_50
         processors[0x51] = self.__process_51
         processors[0x52] = self.__process_52
         processors[0x53] = self.__process_53
@@ -241,7 +241,7 @@ class Vgm:
         self.__wait_samples(1)
 
     def __process_50(self, command, buffer):
-        dd = self.read_int8(buffer)
+        data = self.read_int8(buffer)
         self.__fire_write('SN76489', 0, data)
         self.__wait_samples(1)
 

@@ -16,7 +16,7 @@ class ModuleController:
         self.reset()
 
     def reset(self):
-        RPiReController.reset()
+        RPiReController.reset(microseconds=1000)
          
         for i, m in self.modules.items():
             # Module Initialization
@@ -28,7 +28,7 @@ class ModuleController:
             if name == 'AY8910' and m == name:
                 self.__write_ay8910(i, address, data)
             elif name == 'SN76489' and m == name:
-                self.__write_76489(i, data)
+                self.__write_sn76489(i, data)
             elif name == 'YM2151' and m == name:
                 self.__write_ym2151(i, address, data)
             elif name == 'YM2203' and m == name:
@@ -63,7 +63,24 @@ class ModuleController:
         print("OKI6258: {0:X}, {1:X}".format(address, data))
 
     def __write_sn76489(self, slot, data):
-        self.__write_module(0, data)
+        reg = (data>>4) & 7
+        d = data & 15
+        if reg not in [0,1]:
+            return
+
+        RPiReController.data(data & 0xff)
+        RPiReController.cs0(0)
+        time.sleep(0.001)
+        RPiReController.wr(0)
+        time.sleep(0.001)
+        print("Reg {0:X}, {1:08b}".format(reg, d))
+        # time.sleep(0.001)
+
+        while RPiReController.irq() == 0:
+            pass
+
+        RPiReController.cs0(1)
+        RPiReController.wr(1)
 
     def __write_ym2151(self, slot, address, data):
         self.__write_module(0, address)
