@@ -169,7 +169,7 @@ class Vgm:
         self.stopped = False
         while self.playing:
             command = self.read_int8(self.buffer)
-            # print "Command {0:X} found.".format(command)
+            # print("Command {0:X} found.".format(command))
 
             processor = None
             if command in self.processors:

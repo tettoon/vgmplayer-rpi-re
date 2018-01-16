@@ -58,8 +58,6 @@ class RPiReController:
     @classmethod
     def data(cls, data):
         w.digitalWriteByte(data)
-        # for i, p in enumerate(PINS_D):
-        #     w.digitalWrite(p, (data>>i) & 1)
 
     @classmethod
     def irq(cls):

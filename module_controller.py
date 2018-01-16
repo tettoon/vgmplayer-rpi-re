@@ -22,6 +22,11 @@ class ModuleController:
             # Module Initialization
             if m == 'YM2608':
                 self.__write_ym2608_p0(i, 0x29, 0x80)
+            if m == 'SN76489':
+                self.__write_sn76489(i, 0x9f)
+                self.__write_sn76489(i, 0xbf)
+                self.__write_sn76489(i, 0xdf)
+                self.__write_sn76489(i, 0xff)
 
     def write(self, name, address, data):
         for i, m in self.modules.items():
@@ -63,18 +68,10 @@ class ModuleController:
         print("OKI6258: {0:X}, {1:X}".format(address, data))
 
     def __write_sn76489(self, slot, data):
-        reg = (data>>4) & 7
-        d = data & 15
-        if reg not in [0,1]:
-            return
-
         RPiReController.data(data & 0xff)
+
         RPiReController.cs0(0)
-        time.sleep(0.001)
         RPiReController.wr(0)
-        time.sleep(0.001)
-        print("Reg {0:X}, {1:08b}".format(reg, d))
-        # time.sleep(0.001)
 
         while RPiReController.irq() == 0:
             pass
