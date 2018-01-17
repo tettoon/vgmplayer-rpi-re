@@ -22,11 +22,8 @@ class ModuleController:
             # Module Initialization
             if m == 'YM2608':
                 self.__write_ym2608_p0(i, 0x29, 0x80)
-            if m == 'SN76489':
-                self.__write_sn76489(i, 0x9f)
-                self.__write_sn76489(i, 0xbf)
-                self.__write_sn76489(i, 0xdf)
-                self.__write_sn76489(i, 0xff)
+
+            self.mute()
 
     def write(self, name, address, data):
         for i, m in self.modules.items():
@@ -122,5 +119,34 @@ class ModuleController:
         self.__write_module(1, data)
 
     def mute(self):
-        RPiReController.reset()
+        for i, m in self.modules.items():
+            self.__mute(i, m)
+
+    def __mute(self, i, m):
+        if m == 'AY8910':
+            # mute
+            pass
+        if m == 'SN76489':
+            self.__write_sn76489(i, 0x9f)
+            self.__write_sn76489(i, 0xbf)
+            self.__write_sn76489(i, 0xdf)
+            self.__write_sn76489(i, 0xff)
+        if m == 'YM2151':
+            # mute
+            pass
+        if m == 'YM2203':
+            # mute
+            pass
+        if m == 'YM2413':
+            # mute
+            pass
+        if m == 'YM2608':
+            # mute
+            pass
+        if m == 'YM3526':
+            # mute
+            pass
+        if m == 'YM3812':
+            # mute
+            pass
 
