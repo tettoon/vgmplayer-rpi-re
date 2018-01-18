@@ -1,3 +1,4 @@
+from __future__ import division, print_function, unicode_literals
 import time
 import wiringpi as w
 
@@ -44,10 +45,10 @@ class RPiReController:
     @classmethod
     def reset(cls, microseconds=1):
         w.digitalWrite(PIN_IC, 0)
-        time.sleep(microseconds/1000.0)
+        time.sleep(microseconds/1000000.0)
 
         w.digitalWrite(PIN_IC, 1)
-        time.sleep(microseconds/1000.0)
+        time.sleep(microseconds/1000000.0)
 
     @classmethod
     def address(cls, address):
@@ -59,12 +60,33 @@ class RPiReController:
         w.digitalWriteByte(data)
 
     @classmethod
+    def irq(cls):
+        return w.digitalRead(PIN_IRQ)
+
+    @classmethod
+    def cs0(cls, b):
+        w.digitalWrite(PIN_CS0, b)
+
+    @classmethod
+    def wr(cls, b):
+        w.digitalWrite(PIN_WR, b)
+
+    @classmethod
     def write(cls):
-        w.digitalWrite(PIN_CS0, 0)
-        w.digitalWrite(PIN_WR, 0)
-        time.sleep(0.0000001)
-        w.digitalWrite(PIN_WR, 1)
-        w.digitalWrite(PIN_CS0, 1)
+        cls.cs0(0)
+        cls.wr(0)
+        cls.wr(1)
+        cls.cs0(1)
+
+    @classmethod
+    def read(cls):
+        cls.__set_data_bus_mode(w.INPUT)
+        data = 0
+        for p in PINS_D:
+            data |= w.digitalRead(p)
+            data = data<<1
+        cls.__set_data_bus_mode(w.OUTPUT)
+        return data
 
     @classmethod
     def __set_input_pin(cls, pin, pud):

@@ -63,7 +63,7 @@ class Vgm:
             self.buffer.seek(self.VGM_DATA_OFFSET_POS)
             self.vgm_data_offset = self.read_int32(self.buffer)
         else:
-            self.vgm_data_offset = self.read_int32(0x0000000c)
+            self.vgm_data_offset = 0x0000000c
 
         if self.version >= 0x151:
             # self.buffer.seek(0x38)
@@ -117,8 +117,8 @@ class Vgm:
     def __prepare_processor(self):
         processors = {}
 
-        # processors[0x4f] = self.__process_4f
-        # processors[0x50] = self.__process_50
+        processors[0x4f] = self.__process_4f
+        processors[0x50] = self.__process_50
         processors[0x51] = self.__process_51
         processors[0x52] = self.__process_52
         processors[0x53] = self.__process_53
@@ -145,6 +145,9 @@ class Vgm:
         for i in range(0x70, 0x80):
             processors[i] = self.__process_7n
 
+        for i in range(0x80, 0x90):
+            processors[i] = self.__process_8n
+
         processors[0x90] = self.__process_90
         processors[0x91] = self.__process_91
         processors[0x92] = self.__process_92
@@ -169,7 +172,7 @@ class Vgm:
         self.stopped = False
         while self.playing:
             command = self.read_int8(self.buffer)
-            # print "Command {0:X} found.".format(command)
+            # print("Command {0:X} found.".format(command))
 
             processor = None
             if command in self.processors:
@@ -191,6 +194,7 @@ class Vgm:
                 elif command >= 0xe0 and command <= 0xff:
                     self.buffer.read(4)
                 else:
+                    print("{0:02X}".format(command))
                     raise VgmError("Unsupported command: {0:X}".format(command))
 
             while self.__samples > (time.time()-self.__origin_time)*44100:
@@ -241,7 +245,7 @@ class Vgm:
         self.__wait_samples(1)
 
     def __process_50(self, command, buffer):
-        dd = self.read_int8(buffer)
+        data = self.read_int8(buffer)
         self.__fire_write('SN76489', 0, data)
         self.__wait_samples(1)
 
@@ -386,6 +390,10 @@ class Vgm:
 
     def __process_7n(self, command, buffer):
         self.__wait_samples(command-0x70+1)
+
+    def __process_8n(self, command, buffer):
+        # self.__fire_write("YM2612", 0x2a, data)
+        self.__wait_samples(command-0x80)
 
     def __process_90(self, command, buffer):
         stream_id = self.read_int8(buffer)
