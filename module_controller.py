@@ -6,9 +6,8 @@ from rpi_re.rpi_re import RPiReController
 
 class ModuleController:
 
-    modules = {}
-
     def __init__(self):
+        self.modules = {}
         self.__ym2608_address_p0 = None
         self.__ym2608_address_p1 = None
 
@@ -124,29 +123,35 @@ class ModuleController:
 
     def __mute(self, i, m):
         if m == 'AY8910':
-            # mute
-            pass
+            self.__write_ay8910(i, 0x7, 0x3f)
         if m == 'SN76489':
             self.__write_sn76489(i, 0x9f)
             self.__write_sn76489(i, 0xbf)
             self.__write_sn76489(i, 0xdf)
             self.__write_sn76489(i, 0xff)
         if m == 'YM2151':
-            # mute
-            pass
+            for d in range(8):
+                self.__write_ym2151(i, 0x08, d)
         if m == 'YM2203':
-            # mute
-            pass
+            self.__write_ym2203(i, 0x07, 0x3f)
+            for d in [0, 1, 2]:
+                self.__write_ym2203(i, 0x28, d)
         if m == 'YM2413':
-            # mute
-            pass
+            for r in range(9):
+                self.__write_ym2413(i, 0x20+r, 0)
         if m == 'YM2608':
-            # mute
-            pass
+            self.__write_ym2608_p0(i, 0x7, 0x3f)
+            self.__write_ym2608_p0(i, 0x11, 0)
+            for d in [0, 1, 2, 4, 5, 6]:
+                self.__write_ym2608_p0(i, 0x28, d)
+            self.__write_ym2608_p1(i, 0x0b, 0)
+        if m == 'YM2612':
+            for d in [0, 1, 2, 4, 5, 6]:
+                self.__write_ym2612_p0(i, 0x28, d)
         if m == 'YM3526':
-            # mute
-            pass
+            for r in range(9):
+                self.__write_ym3526(i, 0xb0+r, 0)
         if m == 'YM3812':
-            # mute
-            pass
+            for r in range(9):
+                self.__write_ym3812(i, 0xb0+r, 0)
 
