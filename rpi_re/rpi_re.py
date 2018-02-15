@@ -101,9 +101,8 @@ class RPiReController:
 
     @classmethod
     def __set_data_bus_mode(cls, mode):
-        for pin in range(0, 8):
+        for pin in PINS_D:
             if mode == w.INPUT:
                 cls.__set_input_pin(pin, w.PUD_UP)
             elif mode == w.OUTPUT:
                 cls.__set_output_pin(pin, 0)
-
