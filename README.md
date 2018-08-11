@@ -8,7 +8,7 @@ Choose one.
 
 1. Install prerequisites.
    ```
-   $ sudo apt-get install git python-dev libbz2-dev libreadline-dev libsqllite3-dev libssl-dev
+   $ sudo apt-get install git python-dev libbz2-dev libreadline-dev libsqlite3-dev libssl-dev
    ```
 
 1. Install pip.
@@ -32,7 +32,7 @@ Choose one.
 
 1. Install prerequisites.
    ```
-   $ sudo apt-get install git libbz2-dev libreadline-dev libsqllite3-dev libssl-dev
+   $ sudo apt-get install git libbz2-dev libreadline-dev libsqlite3-dev libssl-dev
    ```
 
 1. Install pyenv.
