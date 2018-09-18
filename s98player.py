@@ -19,7 +19,7 @@ class S98Player:
     show_tag = False
     cancel = False
     repeat = False
-    loop_count = 1
+    loop_count = -1
 
     def __init__(self):
         self.mc = ModuleController()
@@ -92,7 +92,8 @@ args = parser.parse_args()
 signal.signal(signal.SIGINT, break_handler)
 
 player = S98Player()
-player.modules[0] = args.module
+for i, m in enumerate(args.module.split(",")):
+    player.modules[i] = m
 if args.tag:
     player.show_tag = True
 if args.list:

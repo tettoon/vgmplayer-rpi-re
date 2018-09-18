@@ -28,7 +28,7 @@ class S98:
         self.playing = False
         self.stopped = True
         self.repeat = False
-        self.loop_count = 1
+        self.loop_count = -1
         self.reset_handlers = []
         self.write_handlers = []
         self.mute_handlers = []
@@ -140,8 +140,9 @@ class S98:
                     self.playing = False
                 elif self.repeat:
                     self.buffer.seek(self.file_offset_loop_point)
-                elif self.loop_count > 1:
-                    self.loop_count -= 1
+                elif self.loop_count != 1:
+                    if self.loop_count > 1:
+                        self.loop_count -= 1
                     self.buffer.seek(self.file_offset_loop_point)
                 else:
                     self.playing = False
