@@ -83,8 +83,8 @@ def break_handler(signal, frame):
 parser = argparse.ArgumentParser(description='Playback S98 data.')
 parser.add_argument("-t", "--tag", action="store_true", help='show tag')
 parser.add_argument("-l", "--list", action="store_true", help='load M3U playlist')
-parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier')
-parser.add_argument("-r", "--repeat", type=int, help='Repeat song')
+parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier (comma separated)')
+parser.add_argument("-r", "--repeat", type=int, help='repeat song')
 parser.add_argument("file", type=str, help="S98 file")
 args = parser.parse_args()
 
