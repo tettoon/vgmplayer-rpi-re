@@ -8,21 +8,20 @@ import signal
 import sys
 import time
 
-from module_controller import ModuleController
+from module_controller import ModuleInfo, ModuleController
 from m3u import M3U
 from s98.s98 import S98, S98Error
 
 
 class S98Player:
 
-    playlist = False
-    show_tag = False
-    cancel = False
-    repeat = False
-    loop_count = -1
-
     def __init__(self):
         self.mc = ModuleController()
+        self.playlist = False
+        self.show_tag = False
+        self.cancel = False
+        self.repeat = False
+        self.loop_count = -1
 
     @property
     def modules(self):
@@ -93,7 +92,7 @@ signal.signal(signal.SIGINT, break_handler)
 
 player = S98Player()
 for i, m in enumerate(args.module.split(",")):
-    player.modules[i] = m
+    player.modules.append(ModuleInfo.find(m))
 if args.tag:
     player.show_tag = True
 if args.list:
