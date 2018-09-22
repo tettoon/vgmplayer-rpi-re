@@ -116,6 +116,7 @@ class S98:
         self.__fire_reset()
 
         self.__origin_time = time.time() + 0.5
+        opna_adpcm_ctrl1 = 0
 
         self.playing = True
         self.stopped = False
@@ -168,6 +169,13 @@ class S98:
                         self.__fire_write('YM2608', address, data)
                     else:
                         self.__fire_write('YM2608', address | 0x100, data)
+                        if address == 0:
+                            opna_adpcm_ctrl1 = data
+                        if opna_adpcm_ctrl1 & 0x60 == 0x60:
+                            # self.__origin_time += time.time() - t
+                            self.__samples = 0
+                            self.__origin_time = time.time()
+                            continue
                 else:
                     raise S98Error("Unsupported command: 0x{0:X}".format(command))
 
