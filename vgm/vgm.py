@@ -246,79 +246,79 @@ class Vgm:
 
     def __process_50(self, command, buffer):
         data = self.read_int8(buffer)
-        self.__fire_write('SN76489', 0, data)
+        self.__fire_write('SN76489', 0, 0, data)
         self.__wait_samples(1)
 
     def __process_51(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2413', address, data)
+        self.__fire_write('YM2413', 0, address, data)
         self.__wait_samples(1)
 
     def __process_52(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2612', address, data)
+        self.__fire_write('YM2612', 0, address, data)
         self.__wait_samples(1)
 
     def __process_53(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2612', address | 0x100, data)
+        self.__fire_write('YM2612', 0, address | 0x100, data)
         self.__wait_samples(1)
 
     def __process_54(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2151', address, data)
+        self.__fire_write('YM2151', 0, address, data)
         self.__wait_samples(1)
 
     def __process_55(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2203', address, data)
+        self.__fire_write('YM2203', 0, address, data)
         self.__wait_samples(1)
 
     def __process_56(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2608', address, data)
+        self.__fire_write('YM2608', 0, address, data)
         self.__wait_samples(1)
 
     def __process_57(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM2608', address | 0x100, data)
+        self.__fire_write('YM2608', 0, address | 0x100, data)
         self.__wait_samples(1)
 
     def __process_5a(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM3812', address, data)
+        self.__fire_write('YM3812', 0, address, data)
         self.__wait_samples(1)
 
     def __process_5b(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YM3526', address, data)
+        self.__fire_write('YM3526', 0, address, data)
         self.__wait_samples(1)
 
     def __process_5c(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('Y8950', address, data)
+        self.__fire_write('Y8950', 0, address, data)
         self.__wait_samples(1)
 
     def __process_5e(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YMF262', address, data)
+        self.__fire_write('YMF262', 0, address, data)
         self.__wait_samples(1)
 
     def __process_5f(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('YMF262', address | 0x100, data)
+        self.__fire_write('YMF262', 0, address | 0x100, data)
         self.__wait_samples(1)
 
     def __process_61(self, command, buffer):
@@ -345,6 +345,7 @@ class Vgm:
         self.stop()
 
     def __process_67(self, command, buffer):
+        num = 0
         start_time = time.time()
         buffer.read(1)  # skip 0x66
         type = self.read_int8(buffer)
@@ -362,21 +363,21 @@ class Vgm:
                 stop_addr = rom_stop >> 2
                 # sys.stdout.write("Writing YM2608 RAM (start=0x{0:X}, stop=0x{1:X})...".format(rom_start, rom_stop))
                 # sys.stdout.flush()
-                self.__fire_write("YM2608", 0x100, 0x00)
-                self.__fire_write("YM2608", 0x100, 0x01)
-                self.__fire_write("YM2608", 0x101, 0x00)
-                self.__fire_write("YM2608", 0x102, start_addr & 0xff)
-                self.__fire_write("YM2608", 0x103, (start_addr >> 8) & 0xff)
-                self.__fire_write("YM2608", 0x104, stop_addr & 0xff)
-                self.__fire_write("YM2608", 0x105, (stop_addr >> 8) & 0xff)
-                self.__fire_write("YM2608", 0x10c, 0xff)
-                self.__fire_write("YM2608", 0x10d, 0xff)
-                self.__fire_write("YM2608", 0x110, 0x1f)
-                self.__fire_write("YM2608", 0x100, 0x60)
+                self.__fire_write("YM2608", num, 0x100, 0x00)
+                self.__fire_write("YM2608", num, 0x100, 0x01)
+                self.__fire_write("YM2608", num, 0x101, 0x00)
+                self.__fire_write("YM2608", num, 0x102, start_addr & 0xff)
+                self.__fire_write("YM2608", num, 0x103, (start_addr >> 8) & 0xff)
+                self.__fire_write("YM2608", num, 0x104, stop_addr & 0xff)
+                self.__fire_write("YM2608", num, 0x105, (stop_addr >> 8) & 0xff)
+                self.__fire_write("YM2608", num, 0x10c, 0xff)
+                self.__fire_write("YM2608", num, 0x10d, 0xff)
+                self.__fire_write("YM2608", num, 0x110, 0x1f)
+                self.__fire_write("YM2608", num, 0x100, 0x60)
                 for d in array.array('b', rom_data):
-                    self.__fire_write("YM2608", 0x108, d)
-                self.__fire_write("YM2608", 0x100, 0x00)
-                self.__fire_write("YM2608", 0x110, 0x80)
+                    self.__fire_write("YM2608", num, 0x108, d)
+                self.__fire_write("YM2608", num, 0x100, 0x00)
+                self.__fire_write("YM2608", num, 0x110, 0x80)
                 # sys.stdout.write("Done.\n")
                 # sys.stdout.flush()
 
@@ -392,7 +393,7 @@ class Vgm:
         self.__wait_samples(command-0x70+1)
 
     def __process_8n(self, command, buffer):
-        # self.__fire_write("YM2612", 0x2a, data)
+        # self.__fire_write("YM2612", 0, 0x2a, data)
         self.__wait_samples(command-0x80)
 
     def __process_90(self, command, buffer):
@@ -434,22 +435,22 @@ class Vgm:
     def __process_a0(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('AY8910', address, data)
+        self.__fire_write('AY8910', 0, address, data)
         self.__wait_samples(1)
 
     def __process_b7(self, command, buffer):
         address = self.read_int8(buffer)
         data = self.read_int8(buffer)
-        self.__fire_write('OKI6258', address, data)
+        self.__fire_write('OKI6258', 0, address, data)
         self.__wait_samples(1)
 
     def __fire_reset(self):
         for h in self.reset_handlers:
             h()
 
-    def __fire_write(self, name, address, data):
+    def __fire_write(self, name, num, address, data):
         for h in self.write_handlers:
-            h(name, address, data)
+            h(name, num, address, data)
 
     def __fire_mute(self):
         for h in self.mute_handlers:

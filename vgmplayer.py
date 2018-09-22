@@ -11,6 +11,7 @@ import sys
 import time
 
 from module_controller import ModuleController
+from module_info import ModuleInfo
 from m3u import M3U
 from vgm.vgm import Vgm, VgmError
 
@@ -99,14 +100,15 @@ gc.enable()
 parser = argparse.ArgumentParser(description='Playback VGM data.')
 parser.add_argument("-g", "--gd3", action="store_true", help='show GD3 tag')
 parser.add_argument("-l", "--list", action="store_true", help='load M3U playlist')
-parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier')
+parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier (comma separated)')
 parser.add_argument("file", type=str, help="VGM file")
 args = parser.parse_args()
 
 signal.signal(signal.SIGINT, break_handler)
 
 player = VgmPlayer()
-player.modules[0] = args.module
+for i, m in enumerate(args.module.split(",")):
+    player.modules.append(ModuleInfo.find(m))
 if args.gd3:
     player.show_gd3 = True
 if args.list:
