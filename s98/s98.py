@@ -66,17 +66,25 @@ class S98:
                 "device_type": 4,
                 "clock": 7987200,
                 "pan": 0,
+                "num": 0
             })
             self.device_count = 1
         else:
             if self.device_count > 64:
                 raise S98Error('Device count must be less than 64.')
             for i in range(self.device_count):
-                self.device_info.append({
+                d = {
                     "device_type": self.read_int32(self.buffer),
                     "clock": self.read_int32(self.buffer),
                     "pan": self.read_int32(self.buffer),
-                })
+                }
+                c = 0
+                for j in self.device_info:
+                    if j["device_type"] == d["device_type"]:
+                        c += 1
+                        break 
+                d["num"] = c
+                self.device_info.append(d)
                 self.read_int32(self.buffer)
 
         # tag
@@ -158,17 +166,17 @@ class S98:
 
                 device_info = self.device_info[device_num]
                 device_type = device_info['device_type']
-                device_name = None
+                num = device_info['num']
                 if device_type == DEVICE_NONE:
                     pass
                 elif device_type == DEVICE_OPN:
                     if extend == 0:
-                        self.__fire_write('YM2203', address, data)
+                        self.__fire_write('YM2203', num, address, data)
                 elif device_type == DEVICE_OPNA:
                     if extend == 0:
-                        self.__fire_write('YM2608', address, data)
+                        self.__fire_write('YM2608', num, address, data)
                     else:
-                        self.__fire_write('YM2608', address | 0x100, data)
+                        self.__fire_write('YM2608', num, address | 0x100, data)
                         if address == 0:
                             opna_adpcm_ctrl1 = data
                         if opna_adpcm_ctrl1 & 0x60 == 0x60:
@@ -176,6 +184,9 @@ class S98:
                             self.__samples = 0
                             self.__origin_time = time.time()
                             continue
+                elif device_type == DEVICE_OPM:
+                    if extend == 0:
+                        self.__fire_write('YM2151', num, address, data)
                 else:
                     raise S98Error("Unsupported command: 0x{0:X}".format(command))
 
@@ -224,9 +235,9 @@ class S98:
         for h in self.reset_handlers:
             h()
 
-    def __fire_write(self, name, address, data):
+    def __fire_write(self, name, num, address, data):
         for h in self.write_handlers:
-            h(name, address, data)
+            h(name, num, address, data)
 
     def __fire_mute(self):
         for h in self.mute_handlers:

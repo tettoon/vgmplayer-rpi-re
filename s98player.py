@@ -8,21 +8,20 @@ import signal
 import sys
 import time
 
-from module_controller import ModuleController
+from module_controller import ModuleInfo, ModuleController
 from m3u import M3U
 from s98.s98 import S98, S98Error
 
 
 class S98Player:
 
-    playlist = False
-    show_tag = False
-    cancel = False
-    repeat = False
-    loop_count = -1
-
     def __init__(self):
         self.mc = ModuleController()
+        self.playlist = False
+        self.show_tag = False
+        self.cancel = False
+        self.repeat = False
+        self.loop_count = -1
 
     @property
     def modules(self):
@@ -84,8 +83,8 @@ def break_handler(signal, frame):
 parser = argparse.ArgumentParser(description='Playback S98 data.')
 parser.add_argument("-t", "--tag", action="store_true", help='show tag')
 parser.add_argument("-l", "--list", action="store_true", help='load M3U playlist')
-parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier')
-parser.add_argument("-r", "--repeat", type=int, help='Repeat song')
+parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier (comma separated)')
+parser.add_argument("-r", "--repeat", type=int, help='repeat song')
 parser.add_argument("file", type=str, help="S98 file")
 args = parser.parse_args()
 
@@ -93,7 +92,7 @@ signal.signal(signal.SIGINT, break_handler)
 
 player = S98Player()
 for i, m in enumerate(args.module.split(",")):
-    player.modules[i] = m
+    player.modules.append(ModuleInfo.find(m))
 if args.tag:
     player.show_tag = True
 if args.list:
