@@ -18,12 +18,12 @@ from vgm.vgm import Vgm, VgmError
 
 class VgmPlayer:
 
-    playlist = False
-    show_gd3 = False
-    cancel = False
-
     def __init__(self):
         self.mc = ModuleController()
+        self.playlist = False
+        self.show_gd3 = False
+        self.cancel = False
+        self.loop_count = -1
 
     @property
     def modules(self):
@@ -54,6 +54,7 @@ class VgmPlayer:
         self.vgm.reset_handlers.append(self.mc.reset)
         self.vgm.write_handlers.append(self.mc.write)
         self.vgm.mute_handlers.append(self.mc.mute)
+        self.vgm.loop_count = self.loop_count
 
         gd3 = self.vgm.gd3
         if self.show_gd3 and gd3 is not None:
@@ -101,6 +102,7 @@ parser = argparse.ArgumentParser(description='Playback VGM data.')
 parser.add_argument("-g", "--gd3", action="store_true", help='show GD3 tag')
 parser.add_argument("-l", "--list", action="store_true", help='load M3U playlist')
 parser.add_argument("-m", "--module", type=str, help='RE:birth module identifier (comma separated)')
+parser.add_argument("-r", "--repeat", type=int, help='repeat song')
 parser.add_argument("file", type=str, help="VGM file")
 args = parser.parse_args()
 
@@ -113,6 +115,9 @@ if args.gd3:
     player.show_gd3 = True
 if args.list:
     player.playlist = True
+if args.repeat != None:
+    if args.repeat > 0:
+        player.loop_count = args.repeat
 
 player.play(args.file)
 

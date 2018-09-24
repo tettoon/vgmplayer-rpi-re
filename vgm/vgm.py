@@ -15,6 +15,7 @@ class Vgm:
         self.buffer = buffer
         self.playing = False
         self.stopped = True
+        self.loop_count = -1
         self.reset_handlers = []
         self.write_handlers = []
         self.mute_handlers = []
@@ -342,7 +343,14 @@ class Vgm:
             raise VgmError("Invalid command value on command 0x64: {0:X}".format(cc))
 
     def __process_66(self, command, buffer):
-        self.stop()
+        if self.loop_offset != 0:
+            if self.loop_count > 0:
+                self.loop_count -= 1
+            if self.loop_count == 0:
+                self.stop()
+            self.buffer.seek(self.loop_offset + 0x1c)
+        else:
+            self.stop()
 
     def __process_67(self, command, buffer):
         num = 0

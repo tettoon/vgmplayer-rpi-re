@@ -28,7 +28,7 @@ class ModuleController:
     def __find_slot(self, name, num=0):
         c = 0
         for i, m in enumerate(self.modules):
-            if m.name == name:
+            if not m is None and m.name == name:
                 if c == num:
                     return i
                 c += 1
@@ -91,21 +91,30 @@ class ModuleController:
         self.__write_module(slot, 1, data)
 
     def __write_sn76489(self, slot, data):
-        RPiReController.data(slot, data & 0xff)
-
-        if slot == 0:
-            RPiReController.cs0(0)
-        elif slot == 1:
-            RPiReController.cs0(1)
-        else:
+        if slot >= 2:
             return
-
-        RPiReController.wr(0)
 
         while RPiReController.irq() == 0:
             pass
 
+        RPiReController.address(0)
+        RPiReController.data(data & 0xff)
+
+        if slot == 0:
+            RPiReController.cs0(0)
+        else:
+            RPiReController.cs0(1)
+
+        RPiReController.wr(0)
+        time.sleep(0.00001)
         RPiReController.wr(1)
+
+        if slot == 0:
+            RPiReController.cs0(1)
+        else:
+            RPiReController.cs0(0)
+
+        time.sleep(0.00002)
 
     def __write_ym2151(self, slot, address, data):
         self.__write_module(slot, 0, address)
